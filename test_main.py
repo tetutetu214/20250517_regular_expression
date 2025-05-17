@@ -2,14 +2,14 @@
 import unittest
 
 # テスト対象の関数をインポート
-from regex_shooter import generate_enemy_string
+from main import generate_enemy_string
 
 class TestGenerateEnemyString(unittest.TestCase):
     # generate_enemy_string 関数のテストクラス
     def test_string_returned(self):
         # 関数が文字列を返すことをテストします。
         enemy = generate_enemy_string()
-        self.assertTrue(isinstance(enemy, str), "生成された敵は文字列である"))
+        self.assertTrue(isinstance(enemy, str), "生成された敵は文字列である")
 
     def test_string_length(self):
         # 生成される文字列の長さは5文字以上15文字以内
