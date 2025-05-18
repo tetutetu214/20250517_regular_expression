@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正規表現インベーダー - 問題と解答</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>正規表現インベーダー</h1>
+        <h2>問題と解答一覧</h2>
+        
+        <div class="solutions-nav">
+            <div class="buttons">
+                <a href="{{ url_for('solutions', level='beginner') }}" class="btn {% if current_level == 'beginner' %}active{% endif %}">初級問題</a>
+                <a href="{{ url_for('solutions', level='intermediate') }}" class="btn {% if current_level == 'intermediate' %}active{% endif %}">中級問題</a>
+                <a href="{{ url_for('solutions', level='advanced') }}" class="btn {% if current_level == 'advanced' %}active{% endif %}">上級問題</a>
+                <a href="{{ url_for('solutions') }}" class="btn {% if not current_level %}active{% endif %}">全問題</a>
+            </div>
+        </div>
+        
+        <div class="page-navigation">
+            <a href="#top" class="btn nav-btn">▲ トップへ</a>
+            <a href="{{ url_for('index') }}" class="btn nav-btn">ホームへ戻る</a>
+        </div>
+        
+        <div id="top" class="solutions-container">
+            {% for level, problems in levels.items() %}
+            <div class="level-section">
+                <div class="problem-list">
+                    {% for problem in problems %}
+                    <div class="problem-card">
+                        <div class="problem-description">{{ problem['description'] }}</div>
+                        <div class="problem-examples">
+                            <div class="example-group">
+                                <h4>マッチする例:</h4>
+                                <ul>
+                                    {% for example in problem['examples'] %}
+                                    <li>{{ example }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="example-group">
+                                <h4>マッチしない例:</h4>
+                                <ul>
+                                    {% for example in problem['non_examples'] %}
+                                    <li>{{ example }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="problem-solution">
+                            <div class="solution-pattern">解答: <code>{{ problem['pattern'] }}</code></div>
+                            <div class="solution-hint">ヒント1: {{ problem['hint1'] }}</div>
+                            <div class="solution-hint">ヒント2: {{ problem['hint2'] }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if problems|length < problem_counts[level] %}
+                    <div class="problem-card more-problems">
+                        <p>実際のゲームでは {{ problem_counts[level] }}問の問題が用意されています。</p>
+                        <p>ここでは一部のみ表示しています。</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="page-navigation bottom-nav">
+            <a href="#top" class="btn nav-btn">▲ トップへ</a>
+            <a href="{{ url_for('index') }}" class="btn nav-btn">ホームへ戻る</a>
+        </div>
+    </div>
+</body>
+</html>

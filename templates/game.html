@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正規表現インベーダーゲーム - プレイ中</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container game-container">
+        <h1>正規表現インベーダー</h1>
+        <div class="game-header">
+            <div class="level-info">LEVEL: <span id="level-display">{{ level }}</span></div>
+            <div class="question-counter" id="question-counter">STAGE: 1/5</div>
+            <div class="lives">LIVES: <span id="lives">3</span></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="invader-container">
+                <div class="invader" id="invader"></div>
+            </div>
+            
+            <div class="problem-container">
+                <h2 id="problem-description"></h2>
+                <div class="examples">
+                    <div class="example-group">
+                        <h3>MATCH:</h3>
+                        <ul id="match-examples"></ul>
+                    </div>
+                    <div class="example-group">
+                        <h3>DON'T MATCH:</h3>
+                        <ul id="non-match-examples"></ul>
+                    </div>
+                </div>
+                <!-- ヒント表示エリア -->
+                <div id="hint" class="hint" style="display: none;"></div>
+                <!-- 正解表示エリア -->
+                <div id="answer" class="answer" style="display: none;"></div>
+            </div>
+            
+            <div class="input-container">
+                <div class="regex-input">
+                    <span class="regex-delimiter">/</span>
+                    <input type="text" id="regex-pattern" placeholder="正規表現を入力">
+                    <span class="regex-delimiter">/</span>
+                </div>
+                <button id="submit-btn" class="btn">FIRE!</button>
+            </div>
+            
+            <div class="feedback" id="feedback"></div>
+        </div>
+        
+        <div class="game-controls">
+            <a href="{{ url_for('index') }}" class="btn">QUIT</a>
+            <button id="next-btn" class="btn" style="display: none;">NEXT</button>
+        </div>
+    </div>
+    
+    <div id="game-over" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>GAME RESULT</h2>
+            <p>GAME CLEAR!</p>
+            <!-- 正解表示エリアをモーダル内に追加 -->
+            <div id="final-answer" class="final-answer"></div>
+            <div id="result-stats" class="result-stats"></div>
+            <a href="{{ url_for('game', level=level) }}" class="btn">RETRY</a>
+            <a href="{{ url_for('index') }}" class="btn">TITLE</a>
+        </div>
+    </div>
+    
+    <script>
+        // ゲームの難易度を設定
+        const gameLevel = "{{ level }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
