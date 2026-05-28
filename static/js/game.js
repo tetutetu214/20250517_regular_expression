@@ -1,15 +1,17 @@
 // ゲーム状態の管理
 const gameState = {
-    level: gameLevel,
+    level: new URLSearchParams(window.location.search).get('level') || 'beginner',
     lives: 3,
     currentProblem: null,
     problemIndex: 0,
-    attempts: 0,  // 試行回数を追加
-    lastExpectedPattern: null,  // 最後の正解パターンを保存
-    correctAnswers: 0,  // 正解数
-    totalAttempts: 0,   // 総試行回数
-    startTime: null,    // ゲーム開始時間
-    endTime: null       // ゲーム終了時間
+    attempts: 0,           // 同じ問題に対する試行回数
+    lastExpectedPattern: null,
+    correctAnswers: 0,
+    totalAttempts: 0,
+    startTime: null,
+    endTime: null,
+    questionCount: 0,      // 何問目か (1-5)
+    usedProblems: new Set() // 出題済みインデックス
 };
 
 // DOM要素
@@ -24,36 +26,24 @@ const elements = {
     feedback: document.getElementById('feedback'),
     nextBtn: document.getElementById('next-btn'),
     gameOver: document.getElementById('game-over'),
-    finalAnswer: document.getElementById('final-answer'),  // ゲームオーバー時の正解表示
-    resultStats: document.getElementById('result-stats'),  // リザルト統計表示
+    finalAnswer: document.getElementById('final-answer'),
+    resultStats: document.getElementById('result-stats'),
     invader: document.getElementById('invader'),
-    hint: document.getElementById('hint'),  // ヒント表示用の要素
-    answer: document.getElementById('answer'),  // 正解表示用の要素
-    questionCounter: document.getElementById('question-counter')  // 問題カウンター
+    hint: document.getElementById('hint'),
+    answer: document.getElementById('answer'),
+    questionCounter: document.getElementById('question-counter')
 };
 
-// インベーダーの絵文字
 const invaders = ['👾', '👽', '🛸', '🤖', '👹'];
 
-// ゲームの初期化
 function initGame() {
-    // レベル表示を更新
-    elements.levelDisplay.textContent = gameState.level === 'beginner' ? '初級' : 
-                                       gameState.level === 'intermediate' ? '中級' : '上級';
-    
-    // ライフの表示を更新
+    elements.levelDisplay.textContent = gameState.level === 'beginner' ? '初級' :
+                                        gameState.level === 'intermediate' ? '中級' : '上級';
     updateLives();
-    
-    // ゲーム開始時間を記録
     gameState.startTime = new Date();
-    
-    // 最初の問題を取得
-    fetchProblem();
-    
-    // ランダムなインベーダーを表示
+    loadNextProblem();
     elements.invader.textContent = getRandomInvader();
-    
-    // イベントリスナーの設定
+
     elements.submitBtn.addEventListener('click', checkAnswer);
     elements.nextBtn.addEventListener('click', nextProblem);
     elements.regexPattern.addEventListener('keypress', function(e) {
@@ -63,54 +53,52 @@ function initGame() {
     });
 }
 
-// ランダムなインベーダーを取得
 function getRandomInvader() {
     return invaders[Math.floor(Math.random() * invaders.length)];
 }
 
-// 問題を取得
-function fetchProblem() {
-    fetch(`/api/problem?level=${gameState.level}&session_id=${gameState.sessionId}&question_count=${gameState.questionCount}`)
-        .then(response => response.json())
-        .then(data => {
-            // ゲーム完了の場合
-            if (data.game_completed) {
-                gameCompleted();
-                return;
-            }
-            
-            gameState.currentProblem = data;
-            // サーバーから返された問題インデックスを使用
-            gameState.problemIndex = data.problem_index;
-            // 問題カウントを更新
-            gameState.questionCount = data.question_count;
-            
-            // 問題カウンターを更新
-            if (elements.questionCounter) {
-                elements.questionCounter.textContent = `STAGE: ${gameState.questionCount}/5`;
-            }
-            
-            displayProblem(data);
-            // 新しい問題に切り替わったら試行回数をリセット
-            gameState.attempts = 0;
-            // ヒントと正解表示をクリア
-            if (elements.hint) {
-                elements.hint.textContent = '';
-                elements.hint.style.display = 'none';
-            }
-            if (elements.answer) {
-                elements.answer.textContent = '';
-                elements.answer.style.display = 'none';
-            }
-        })
-        .catch(error => {
-            console.error('問題の取得に失敗しました:', error);
-            elements.feedback.textContent = '問題の取得に失敗しました。もう一度お試しください。';
-            elements.feedback.className = 'feedback error';
-        });
+// 元 /api/problem 相当: ローカルの PROBLEMS から未出題のものをランダムに1問選ぶ
+function loadNextProblem() {
+    // 5問終わったらゲームクリア
+    if (gameState.questionCount >= QUESTIONS_PER_GAME) {
+        gameCompleted();
+        return;
+    }
+
+    const levelProblems = PROBLEMS[gameState.level] || PROBLEMS.beginner;
+    let availableIndices = levelProblems
+        .map((_, i) => i)
+        .filter(i => !gameState.usedProblems.has(i));
+
+    // 候補が尽きたら出題済みリセット (1ゲーム5問だが、レベルの問題数 < 5 のフェイルセーフ)
+    if (availableIndices.length === 0) {
+        gameState.usedProblems.clear();
+        availableIndices = levelProblems.map((_, i) => i);
+    }
+
+    const chosenIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+    gameState.usedProblems.add(chosenIndex);
+    gameState.problemIndex = chosenIndex;
+    gameState.currentProblem = levelProblems[chosenIndex];
+    gameState.questionCount += 1;
+    gameState.attempts = 0;
+
+    if (elements.questionCounter) {
+        elements.questionCounter.textContent = `STAGE: ${gameState.questionCount}/${QUESTIONS_PER_GAME}`;
+    }
+
+    displayProblem(gameState.currentProblem);
+
+    if (elements.hint) {
+        elements.hint.textContent = '';
+        elements.hint.style.display = 'none';
+    }
+    if (elements.answer) {
+        elements.answer.textContent = '';
+        elements.answer.style.display = 'none';
+    }
 }
 
-// 問題を表示
 function displayProblem(problem) {
     if (!problem || !problem.description) {
         console.error('問題データが不正です:', problem);
@@ -120,230 +108,174 @@ function displayProblem(problem) {
     }
 
     elements.problemDescription.textContent = problem.description;
-    
-    // マッチする例を表示
+
     elements.matchExamples.innerHTML = '';
     problem.examples.forEach(example => {
         const li = document.createElement('li');
         li.textContent = example;
         elements.matchExamples.appendChild(li);
     });
-    
-    // マッチしない例を表示
+
     elements.nonMatchExamples.innerHTML = '';
     problem.non_examples.forEach(example => {
         const li = document.createElement('li');
         li.textContent = example;
         elements.nonMatchExamples.appendChild(li);
     });
-    
-    // 入力フィールドをクリア
+
     elements.regexPattern.value = '';
     elements.feedback.textContent = '';
     elements.feedback.className = 'feedback';
-    
-    // 次へボタンを非表示
     elements.nextBtn.style.display = 'none';
-    
-    // フォーカスを入力フィールドに設定
     elements.regexPattern.focus();
 }
 
-// 回答をチェック
+// 元 /api/check 相当: ローカルで RegExp 判定する
 function checkAnswer() {
-    const pattern = elements.regexPattern.value.trim();
-    
-    if (!pattern) {
+    const userPattern = elements.regexPattern.value.trim();
+
+    if (!userPattern) {
         elements.feedback.textContent = '正規表現を入力してください。';
         elements.feedback.className = 'feedback error';
         return;
     }
-    
-    // 試行回数をインクリメント
+
     gameState.attempts++;
     gameState.totalAttempts++;
-    
-    // APIに回答を送信
-    fetch('/api/check', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            pattern: pattern,
-            level: gameState.level,
-            problem_index: gameState.problemIndex,
-            attempts: gameState.attempts,
-            lives: gameState.lives,  // 現在のライフ数を送信
-            question_count: gameState.questionCount  // 問題カウントを送信
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.valid) {
-            // 正解の場合
-            elements.feedback.textContent = `${data.message} 模範解答: ${data.expected_pattern}`;
-            elements.feedback.className = 'feedback success';
-            
-            // 正解数をインクリメント
-            gameState.correctAnswers++;
-            
-            // ヒントと正解を非表示
-            if (elements.hint) {
-                elements.hint.style.display = 'none';
-            }
-            if (elements.answer) {
-                elements.answer.style.display = 'none';
-            }
-            
-            // インベーダーを爆発させるアニメーション
-            elements.invader.textContent = '💥';
-            
-            // ゲーム完了の場合
-            if (data.game_completed) {
-                // ゲーム終了時間を記録
-                gameState.endTime = new Date();
-                setTimeout(() => {
-                    gameCompleted();
-                }, 1000);
-            } else {
-                // 自動的に次の問題へ進む
-                setTimeout(() => {
-                    elements.invader.style.visibility = 'hidden';
-                    setTimeout(() => {
-                        nextProblem();
-                    }, 500);
-                }, 1000);
-            }
-        } else {
-            // 不正解の場合
-            elements.feedback.textContent = data.message;
-            elements.feedback.className = 'feedback error';
-            
-            // 最後の正解パターンを保存
-            if (data.expected_pattern) {
-                gameState.lastExpectedPattern = data.expected_pattern;
-            }
-            
-            // ヒントを表示（試行回数に応じて）
-            if (data.hint && elements.hint) {
-                elements.hint.textContent = `ヒント: ${data.hint}`;
-                elements.hint.style.display = 'block';
-            }
-            
-            // 最後のライフの場合は正解も表示
-            if (data.expected_pattern && elements.answer && gameState.lives <= 1) {
-                elements.answer.textContent = `正解: ${data.expected_pattern}`;
-                elements.answer.style.display = 'block';
-            }
-            
-            // マッチ結果の詳細を表示
-            if (data.match_results) {
-                let matchDetails = '';
-                
-                // マッチする例の結果
-                const exampleResults = data.match_results.examples;
-                for (let i = 0; i < exampleResults.length; i++) {
-                    const example = gameState.currentProblem.examples[i];
-                    const matched = exampleResults[i];
-                    
-                    if (!matched) {
-                        matchDetails += `「${example}」にマッチしませんでした。`;
-                    }
-                }
-                
-                // マッチしない例の結果
-                const nonExampleResults = data.match_results.non_examples;
-                for (let i = 0; i < nonExampleResults.length; i++) {
-                    const example = gameState.currentProblem.non_examples[i];
-                    const matched = nonExampleResults[i];
-                    
-                    if (matched) {
-                        matchDetails += `「${example}」にマッチしてしまいました。`;
-                    }
-                }
-                
-                if (matchDetails) {
-                    elements.feedback.textContent += ' ' + matchDetails;
-                }
-            }
-            
-            // ライフを減らす
-            gameState.lives--;
-            updateLives();
-            
-            // ゲームオーバーのチェック
-            if (gameState.lives <= 0) {
-                // ゲーム終了時間を記録
-                gameState.endTime = new Date();
-                gameOver();
-            }
-        }
-    })
-    .catch(error => {
-        console.error('回答の送信に失敗しました:', error);
-        elements.feedback.textContent = '回答の送信に失敗しました。もう一度お試しください。';
+
+    const problem = gameState.currentProblem;
+    const expectedPattern = problem.pattern;
+
+    // ユーザー入力の例・非例マッチ結果
+    const exampleResults = problem.examples.map(ex => fullMatch(userPattern, ex));
+    const nonExampleResults = problem.non_examples.map(ex => fullMatch(userPattern, ex));
+
+    // 無効な正規表現 (null が含まれる) を弾く
+    if (exampleResults.includes(null) || nonExampleResults.includes(null)) {
+        elements.feedback.textContent = '無効な正規表現です';
         elements.feedback.className = 'feedback error';
+        return;
+    }
+
+    const allExamplesMatch = exampleResults.every(Boolean);
+    const noNonExamplesMatch = nonExampleResults.every(r => !r);
+
+    if (allExamplesMatch && noNonExamplesMatch) {
+        // 正解
+        elements.feedback.textContent = `正解です! 模範解答: ${expectedPattern}`;
+        elements.feedback.className = 'feedback success';
+        gameState.correctAnswers++;
+
+        if (elements.hint) elements.hint.style.display = 'none';
+        if (elements.answer) elements.answer.style.display = 'none';
+
+        elements.invader.textContent = '💥';
+
+        const isFinalQuestion = gameState.questionCount >= QUESTIONS_PER_GAME;
+        if (isFinalQuestion) {
+            gameState.endTime = new Date();
+            setTimeout(() => gameCompleted(), 1000);
+        } else {
+            setTimeout(() => {
+                elements.invader.style.visibility = 'hidden';
+                setTimeout(() => nextProblem(), 500);
+            }, 1000);
+        }
+        return;
+    }
+
+    // 不正解
+    elements.feedback.textContent = '不正解です。もう一度試してください。';
+    elements.feedback.className = 'feedback error';
+    gameState.lastExpectedPattern = expectedPattern;
+
+    // 試行回数に応じたヒント
+    let hintText = null;
+    if (gameState.attempts === 1) {
+        hintText = problem.hint1;
+    } else if (gameState.attempts >= 2) {
+        hintText = problem.hint2;
+    }
+    if (hintText && elements.hint) {
+        elements.hint.textContent = `ヒント: ${hintText}`;
+        elements.hint.style.display = 'block';
+    }
+
+    // 最後のライフなら正解も表示 (元実装に合わせる)
+    if (gameState.lives <= 1 && elements.answer) {
+        elements.answer.textContent = `正解: ${expectedPattern}`;
+        elements.answer.style.display = 'block';
+    }
+
+    // マッチ結果の詳細
+    let matchDetails = '';
+    exampleResults.forEach((matched, i) => {
+        if (!matched) {
+            matchDetails += `「${problem.examples[i]}」にマッチしませんでした。`;
+        }
     });
+    nonExampleResults.forEach((matched, i) => {
+        if (matched) {
+            matchDetails += `「${problem.non_examples[i]}」にマッチしてしまいました。`;
+        }
+    });
+    if (matchDetails) {
+        elements.feedback.textContent += ' ' + matchDetails;
+    }
+
+    gameState.lives--;
+    updateLives();
+
+    if (gameState.lives <= 0) {
+        gameState.endTime = new Date();
+        gameOver();
+    }
 }
 
-// 次の問題へ
 function nextProblem() {
     elements.invader.style.visibility = 'visible';
     elements.invader.textContent = getRandomInvader();
-    fetchProblem();
+    loadNextProblem();
 }
 
-// ライフの更新
 function updateLives() {
     elements.livesDisplay.textContent = '❤️'.repeat(gameState.lives);
 }
 
-// ゲームオーバー
 function gameOver() {
-    // リザルト統計を表示
     displayResultStats(false);
-    
-    // 最後の問題の正解をゲームオーバーモーダルに表示
     if (gameState.lastExpectedPattern && elements.finalAnswer) {
         elements.finalAnswer.textContent = `最後の問題の正解: ${gameState.lastExpectedPattern}`;
     }
-    
-    // ゲームオーバーモーダルを表示
     elements.gameOver.style.display = 'flex';
 }
 
-// ゲーム完了
 function gameCompleted() {
-    // リザルト統計を表示
+    if (!gameState.endTime) gameState.endTime = new Date();
     displayResultStats(true);
-    
-    // ゲーム完了メッセージを表示
     if (elements.finalAnswer) {
-        elements.finalAnswer.textContent = `おめでとうございます！全ての問題をクリアしました！`;
+        elements.finalAnswer.textContent = `おめでとうございます! 全ての問題をクリアしました!`;
     }
-    
-    // ゲームオーバーモーダルを表示
     elements.gameOver.style.display = 'flex';
 }
 
-// リザルト統計を表示
 function displayResultStats(completed) {
     if (!elements.resultStats) return;
-    
-    // プレイ時間を計算
+
     const playTime = gameState.endTime - gameState.startTime;
     const minutes = Math.floor(playTime / 60000);
     const seconds = Math.floor((playTime % 60000) / 1000);
-    
-    // 正答率を計算
-    const accuracy = Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100);
-    
-    // リザルト統計を表示
-    let statsHTML = `
+    const accuracy = gameState.totalAttempts > 0
+        ? Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100)
+        : 0;
+
+    const levelLabel = gameState.level === 'beginner' ? '初級' :
+                       gameState.level === 'intermediate' ? '中級' : '上級';
+
+    elements.resultStats.innerHTML = `
         <div class="stat-item">
             <div class="stat-label">難易度:</div>
-            <div class="stat-value">${gameState.level === 'beginner' ? '初級' : gameState.level === 'intermediate' ? '中級' : '上級'}</div>
+            <div class="stat-value">${levelLabel}</div>
         </div>
         <div class="stat-item">
             <div class="stat-label">クリア状況:</div>
@@ -351,7 +283,7 @@ function displayResultStats(completed) {
         </div>
         <div class="stat-item">
             <div class="stat-label">正解数:</div>
-            <div class="stat-value">${gameState.correctAnswers}/5</div>
+            <div class="stat-value">${gameState.correctAnswers}/${QUESTIONS_PER_GAME}</div>
         </div>
         <div class="stat-item">
             <div class="stat-label">正答率:</div>
@@ -362,13 +294,6 @@ function displayResultStats(completed) {
             <div class="stat-value">${minutes}分${seconds}秒</div>
         </div>
     `;
-    
-    elements.resultStats.innerHTML = statsHTML;
 }
 
-// セッションIDを生成
-gameState.sessionId = Date.now().toString();
-gameState.questionCount = 0;
-
-// ゲームの初期化
 document.addEventListener('DOMContentLoaded', initGame);

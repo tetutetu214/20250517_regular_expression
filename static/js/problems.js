@@ -1,0 +1,153 @@
+// 正規表現インベーダー: 問題データ
+// 元 app.py の LEVELS / PROBLEM_COUNTS を JS にそのまま移植したもの。
+// pattern は String.raw でバックスラッシュをそのまま書ける形にしている。
+
+const PROBLEMS = {
+    beginner: [
+        {
+            pattern: String.raw`A+`,
+            description: '1つ以上の「A」にマッチする正規表現',
+            examples: ['A', 'AA', 'AAA'],
+            non_examples: ['B', 'BA', ''],
+            hint1: '「+」記号は1回以上の繰り返しを表します',
+            hint2: '文字「A」が1回以上繰り返される文字列にマッチさせるには「A+」と書きます'
+        },
+        {
+            pattern: String.raw`[0-9]+`,
+            description: '1つ以上の数字にマッチする正規表現',
+            examples: ['123', '0', '9876'],
+            non_examples: ['abc', 'a1', ''],
+            hint1: '「[]」は文字クラスを表し、その中に含まれる任意の1文字にマッチします',
+            hint2: '[0-9]は任意の数字1文字を表し、「+」を付けると1回以上の繰り返しになります'
+        },
+        {
+            pattern: String.raw`[a-z]{3}`,
+            description: '3つの小文字アルファベットにマッチする正規表現',
+            examples: ['abc', 'xyz', 'def'],
+            non_examples: ['ab', 'ABC', '123'],
+            hint1: '「{n}」は直前のパターンがちょうどn回繰り返されることを表します',
+            hint2: '[a-z]は小文字アルファベット1文字を表し、{3}を付けるとちょうど3文字になります'
+        },
+        {
+            pattern: String.raw`B.*A`,
+            description: '「B」で始まり「A」で終わる文字列にマッチする正規表現',
+            examples: ['BA', 'BCA', 'B123A'],
+            non_examples: ['AB', 'B', 'ABC'],
+            hint1: '「.」は任意の1文字にマッチし、「*」は直前のパターンが0回以上繰り返されることを表します',
+            hint2: 'B.*Aは「B」の後に任意の文字が0文字以上続き、最後が「A」で終わる文字列にマッチします'
+        },
+        {
+            pattern: String.raw`(AB)+`,
+            description: '「AB」の1回以上の繰り返しにマッチする正規表現',
+            examples: ['AB', 'ABAB', 'ABABAB'],
+            non_examples: ['A', 'BA', 'ABA'],
+            hint1: '「()」はグループ化を表します',
+            hint2: '(AB)+は「AB」というパターンが1回以上繰り返される文字列にマッチします'
+        }
+    ],
+    intermediate: [
+        {
+            pattern: String.raw`^[a-z]+[0-9]$`,
+            description: '小文字で始まり、数字で終わる文字列にマッチする正規表現',
+            examples: ['abc1', 'z9', 'hello5'],
+            non_examples: ['1abc', 'ABC1', 'abc'],
+            hint1: '「^」は文字列の先頭、「$」は文字列の末尾を表します',
+            hint2: '[a-z]+は1つ以上の小文字、[0-9]は1つの数字を表します'
+        },
+        {
+            pattern: String.raw`\b\w+@\w+\.\w+\b`,
+            description: '簡単なメールアドレスパターンにマッチする正規表現',
+            examples: ['user@example.com', 'a@b.c'],
+            non_examples: ['@example.com', 'user@', 'user@example'],
+            hint1: '「\\w」は英数字とアンダースコアにマッチします',
+            hint2: 'メールアドレスは「名前@ドメイン.拡張子」の形式です。「\\.」はドットにマッチします'
+        },
+        {
+            pattern: String.raw`^\d{3}-\d{4}$`,
+            description: '郵便番号形式(123-4567)にマッチする正規表現',
+            examples: ['123-4567', '000-0000'],
+            non_examples: ['1234-567', '123-456', '123-45678'],
+            hint1: '「\\d」は数字1文字にマッチします',
+            hint2: '郵便番号は3桁の数字、ハイフン、4桁の数字の形式です'
+        },
+        {
+            pattern: String.raw`^(?!.*ABC).*$`,
+            description: '「ABC」を含まない文字列にマッチする正規表現',
+            examples: ['XYZ', '123', 'ABXC'],
+            non_examples: ['ABC', 'XABCY', '123ABC'],
+            hint1: '「(?!パターン)」は否定先読みを表します',
+            hint2: '(?!.*ABC)は「ABC」という部分文字列が含まれないことを確認します'
+        },
+        {
+            pattern: String.raw`^\d+(\.\d{2})?$`,
+            description: '整数または小数点以下2桁の数値にマッチする正規表現',
+            examples: ['123', '0.99', '50.00'],
+            non_examples: ['123.', '123.456', 'abc'],
+            hint1: '「(パターン)?」はそのパターンが0回または1回出現することを表します',
+            hint2: '\\d+は1つ以上の数字、(\\.\\d{2})?は小数点と2桁の数字が0回または1回出現することを表します'
+        }
+    ],
+    advanced: [
+        {
+            pattern: String.raw`^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,}$`,
+            description: '8文字以上で、少なくとも1つの大文字、小文字、数字を含むパスワードにマッチする正規表現',
+            examples: ['Password123', 'Abcdef12'],
+            non_examples: ['password', 'PASSWORD', 'Pass'],
+            hint1: '「(?=.*パターン)」は先読み表現で、そのパターンが含まれることを確認します',
+            hint2: '先読み表現を使って大文字、小文字、数字がそれぞれ含まれることを確認し、全体の長さを{8,}で8文字以上に制限します'
+        },
+        {
+            pattern: String.raw`^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$`,
+            description: 'URLにマッチする正規表現',
+            examples: ['https://example.com', 'www.example.co.jp/path'],
+            non_examples: ['example', 'http://', 'https://example'],
+            hint1: '「(パターン)?」はそのパターンが0回または1回出現することを表します',
+            hint2: 'URLはプロトコル(http://)、ドメイン名、トップレベルドメイン(.com等)、パスの組み合わせです'
+        },
+        {
+            pattern: String.raw`^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$`,
+            description: 'YYYY-MM-DD形式の日付にマッチする正規表現',
+            examples: ['2023-01-31', '2020-12-25'],
+            non_examples: ['2023/01/31', '2023-13-01', '2023-01-32'],
+            hint1: '「|」は選択を表し、いずれかのパターンにマッチします',
+            hint2: '月は01-12、日は01-31の範囲で、それぞれの範囲を正確に表現するには選択パターンを使います'
+        },
+        {
+            pattern: String.raw`^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$`,
+            description: '8文字以上で、少なくとも1つの英字、数字、特殊文字を含むパスワードにマッチする正規表現',
+            examples: ['Pass@123', 'hello#789'],
+            non_examples: ['password', '12345678', 'Pass123'],
+            hint1: '複数の先読み表現を組み合わせることで、複数の条件を同時に満たすことを確認できます',
+            hint2: '英字、数字、特殊文字(@$!%*#?&)がそれぞれ含まれることを確認し、全体の長さを{8,}で8文字以上に制限します'
+        },
+        {
+            pattern: String.raw`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`,
+            description: 'IPv4アドレスにマッチする正規表現',
+            examples: ['192.168.1.1', '10.0.0.1', '255.255.255.0'],
+            non_examples: ['256.0.0.1', '192.168.1', '192.168.1.1.1'],
+            hint1: '「(?:パターン)」は非キャプチャグループを表します',
+            hint2: 'IPアドレスの各オクテットは0～255の範囲の数値で、それを4つのグループに分けて表現します'
+        }
+    ]
+};
+
+// ゲーム外で「このレベルには本来何問用意されている」という表記用の数値
+const PROBLEM_COUNTS = {
+    beginner: 50,
+    intermediate: 35,
+    advanced: 15
+};
+
+// 1ゲームで出題する問題数
+const QUESTIONS_PER_GAME = 5;
+
+// re.fullmatch 相当を JS で実現するための判定関数
+// userPattern が無効な正規表現なら null を返す
+function fullMatch(userPattern, text) {
+    try {
+        const re = new RegExp('^(?:' + userPattern + ')$');
+        return re.test(text);
+    } catch (e) {
+        return null;
+    }
+}
