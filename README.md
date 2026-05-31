@@ -16,10 +16,8 @@
 
 ## 技術スタック
 
-- バックエンド: Python + Flask
-- フロントエンド: HTML, CSS, JavaScript
-- コンテナ化: Docker
-- デプロイ: AWS ECS (予定)
+- フロントエンドのみ: HTML, CSS, JavaScript
+- デプロイ: S3 + CloudFront などの静的ホスティング（手順は後続で整備）
 
 ## ローカルでの実行方法
 
@@ -29,46 +27,22 @@ git clone <リポジトリURL>
 cd regex_invaders
 ```
 
-2. 仮想環境を作成して有効化（オプション）
+2. ローカルサーバーを起動
 ```
-python -m venv venv
-# Windowsの場合
-venv\Scripts\activate
-# macOS/Linuxの場合
-source venv/bin/activate
+python -m http.server 8000
 ```
 
-3. 依存関係をインストール
-```
-pip install -r requirements.txt
-```
+3. ブラウザで http://localhost:8000 にアクセス
 
-4. アプリケーションを実行
-```
-python app.py
-```
+## テスト
 
-5. ブラウザで http://localhost:5000 にアクセス
+正規表現の判定ロジックと出題ロジックは Node.js で確認できます。
 
-## Dockerでの実行方法
-
-1. Dockerイメージをビルド
 ```
-docker build -t regex-invaders .
+node tests/regex-core.test.js
 ```
 
-2. コンテナを実行
-```
-docker run -p 5000:5000 regex-invaders
-```
+## 静的ホスティングへのデプロイ（予定）
 
-3. ブラウザで http://localhost:5000 にアクセス
-
-## AWS ECSへのデプロイ（予定）
-
-1. ECRリポジトリを作成
-2. Dockerイメージをビルドしてプッシュ
-3. ECSクラスターとサービスを設定
-4. タスク定義を作成してデプロイ
-
-詳細な手順は今後追加予定です。
+S3 + CloudFront などの静的ホスティングに配置する想定です。
+詳細な手順は後続で整備します。

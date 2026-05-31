@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>正規表現インベーダーゲーム</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -17,9 +17,9 @@
         <div class="difficulty-selection">
             <h2>SELECT DIFFICULTY:</h2>
             <div class="buttons">
-                <a href="{{ url_for('game', level='beginner') }}" class="btn pixel-btn">EASY</a>
-                <a href="{{ url_for('game', level='intermediate') }}" class="btn pixel-btn">NORMAL</a>
-                <a href="{{ url_for('game', level='advanced') }}" class="btn pixel-btn">HARD</a>
+                <a href="game.html?level=beginner" class="btn pixel-btn">EASY</a>
+                <a href="game.html?level=intermediate" class="btn pixel-btn">NORMAL</a>
+                <a href="game.html?level=advanced" class="btn pixel-btn">HARD</a>
             </div>
         </div>
         
@@ -106,9 +106,9 @@
         <div class="solutions-links">
             <h2>問題と解答一覧</h2>
             <div class="buttons">
-                <a href="{{ url_for('solutions', level='beginner') }}" class="btn">初級問題 (50問)</a>
-                <a href="{{ url_for('solutions', level='intermediate') }}" class="btn">中級問題 (35問)</a>
-                <a href="{{ url_for('solutions', level='advanced') }}" class="btn">上級問題 (15問)</a>
+                <a href="solutions.html?level=beginner" class="btn">初級問題 (50問)</a>
+                <a href="solutions.html?level=intermediate" class="btn">中級問題 (35問)</a>
+                <a href="solutions.html?level=advanced" class="btn">上級問題 (15問)</a>
             </div>
         </div>
         
