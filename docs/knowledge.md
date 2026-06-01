@@ -2,6 +2,9 @@
 
 ## 決定事項
 - 2026-05-31: デプロイ方針を ECS（README の予定）から **完全静的化 + S3系** に転換（てつてつ判断）。理由: 規模に対して ECS は過剰・高コスト。判定ロジックがサーバー必須でないため静的化可能。
+- 2026-05-31: ホスティングは **S3 + CloudFront（CDK で IaC）** に決定。GitHub は既存リモート（SSH: 20250517_regular_expression）を使い PR 運用。
+- 2026-05-31: **重複ブランチ発覚** — 既存 `feature/cloudflare-static-migration`（77ee5fe）が同じ静的化を先行実施していた（Cloudflare 向け、テスト/コア分離/docs なし、Cloudflare 設定ファイルは未コミットで未デプロイ）。最初の git log で見落として重複作業を発生させた反省点。判断: 完成度の高い `refactor/static-hosting`（テスト・regex-core 分離・docs あり）を採用。Cloudflare ブランチは放置（不要なら後で削除）。
+  - 教訓: セッション開始時の `git log` は `--all` で全ブランチを確認し、リモートがあれば必ず `git fetch --all` してから着手する。
 
 ## 技術知見
 ### このアプリがサーバー不要だった理由
