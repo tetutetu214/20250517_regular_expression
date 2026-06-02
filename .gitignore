@@ -1,0 +1,13 @@
+# Codex スクラッチ
+.agents/
+.codex/
+
+# Python（旧 Flask 構成の名残・念のため）
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
