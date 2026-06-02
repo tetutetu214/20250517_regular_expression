@@ -16,11 +16,18 @@
 - [x] 15問の模範解答が正解判定になるかテスト（node tests/ 全10件パス）
 - [ ] ブラウザ実機での体感確認（任意）
 
-## Phase 2: デプロイ
-- [ ] ホスティング方式決定（S3+CloudFront / Amplify Hosting）
-- [ ] IaC or 手順整備
-- [ ] デプロイ（てつてつ aws login 後）
+## Phase 1.5: PR（完了 2026-05-31）
+- [x] refactor/static-hosting を push、PR #1 作成
+  - https://github.com/tetutetu214/20250517_regular_expression/pull/1
+- [ ] PR レビュー・master へマージ（てつてつ）
+
+## Phase 2: デプロイ（S3 + CloudFront / CDK）
+- [x] ホスティング方式決定: S3 + CloudFront（CDK で IaC）
+- [ ] CDK スタック作成（S3 非公開 + CloudFront OAC + BucketDeployment）※Codex 委譲予定
+- [ ] デプロイ前の理解度テスト（変更内容/影響コスト/ロールバック）
+- [ ] てつてつが手動 aws login → cdk deploy
+- [ ] 動作確認（CloudFront ドメインで全ページ）
 
 ## 保留・要確認
-- [ ] 問題数の不整合（README 50/35/15 vs 実데이터 各5問）をどうするか
-- [ ] GitHub リモート作成の要否（PR 運用するか）
+- [ ] 問題数の不整合（README 50/35/15 vs 実データ各5問）をどうするか
+- [ ] 既存 feature/cloudflare-static-migration ブランチの扱い（不要なら削除）
